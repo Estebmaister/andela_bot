@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Support Chat</title>
 
+    <!-- Custom stylesheet -->
+    <link rel="stylesheet" href="/static/style.css">
+
     <!-- Markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- XSS protection -->
@@ -12,406 +15,6 @@
     <!-- Syntax highlighting -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css">
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .chat-container {
-            width: 100%;
-            max-width: 700px;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 85vh;
-            max-height: 800px;
-        }
-
-        .chat-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .chat-header h1 {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            background: #4ade80;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .message {
-            display: flex;
-            gap: 10px;
-            max-width: 90%;
-        }
-
-        .message.user {
-            align-self: flex-end;
-            flex-direction: row-reverse;
-        }
-
-        .message-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-
-        .message.assistant .message-avatar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .message.user .message-avatar {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        .message-bubble {
-            padding: 12px 16px;
-            border-radius: 18px;
-            font-size: 15px;
-            line-height: 1.6;
-            overflow-wrap: break-word;
-            word-wrap: break-word;
-            word-break: break-word;
-        }
-
-        .message.assistant .message-bubble {
-            background: #f3f4f6;
-            color: #1f2937;
-            border-bottom-left-radius: 4px;
-        }
-
-        .message.user .message-bubble {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-
-        /* Markdown Styles */
-        .markdown-content h1, .markdown-content h2, .markdown-content h3 {
-            margin-top: 12px;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        .markdown-content h1 { font-size: 1.3em; }
-        .markdown-content h2 { font-size: 1.2em; }
-        .markdown-content h3 { font-size: 1.1em; }
-
-        .markdown-content p {
-            margin-bottom: 8px;
-        }
-
-        .markdown-content ul, .markdown-content ol {
-            margin-left: 20px;
-            margin-bottom: 8px;
-        }
-
-        .markdown-content li {
-            margin-bottom: 4px;
-        }
-
-        .markdown-content code {
-            background: rgba(0, 0, 0, 0.1);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Monaco', 'Consolas', monospace;
-            font-size: 0.9em;
-        }
-
-        .markdown-content pre {
-            background: #1e293b;
-            border-radius: 8px;
-            padding: 12px;
-            overflow-x: auto;
-            margin: 10px 0;
-        }
-
-        .markdown-content pre code {
-            background: transparent;
-            padding: 0;
-            color: #e2e8f0;
-        }
-
-        .markdown-content strong {
-            font-weight: 600;
-        }
-
-        .markdown-content em {
-            font-style: italic;
-        }
-
-        .markdown-content a {
-            color: #667eea;
-            text-decoration: underline;
-        }
-
-        .markdown-content blockquote {
-            border-left: 3px solid #667eea;
-            padding-left: 12px;
-            margin: 8px 0;
-            color: #6b7280;
-        }
-
-        .markdown-content table {
-            border-collapse: collapse;
-            width: 100%;
-            margin: 10px 0;
-            font-size: 0.9em;
-        }
-
-        .markdown-content th, .markdown-content td {
-            border: 1px solid #e5e7eb;
-            padding: 8px 12px;
-            text-align: left;
-        }
-
-        .markdown-content th {
-            background: #f9fafb;
-            font-weight: 600;
-        }
-
-        .markdown-content hr {
-            border: none;
-            border-top: 1px solid #e5e7eb;
-            margin: 12px 0;
-        }
-
-        .typing-indicator {
-            display: none;
-            gap: 4px;
-            padding: 12px 16px;
-            background: #f3f4f6;
-            border-radius: 18px;
-            border-bottom-left-radius: 4px;
-            width: fit-content;
-        }
-
-        .typing-indicator.active {
-            display: flex;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: #9ca3af;
-            border-radius: 50%;
-            animation: typing 1.4s infinite;
-        }
-
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-4px); }
-        }
-
-        .chat-input {
-            padding: 20px;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .input-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .chat-input input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 1px solid #e5e7eb;
-            border-radius: 24px;
-            font-size: 15px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .chat-input input:focus {
-            border-color: #667eea;
-        }
-
-        .chat-input button {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 24px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .chat-input button:hover {
-            transform: scale(1.05);
-        }
-
-        .chat-input button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .controls-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .control-btn {
-            padding: 8px 16px;
-            background: #f3f4f6;
-            color: #374151;
-            border: 1px solid #e5e7eb;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .control-btn:hover {
-            background: #e5e7eb;
-        }
-
-        .control-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: transparent;
-        }
-
-        .control-btn.danger:hover {
-            background: #fecaca;
-            border-color: #fca5a5;
-            color: #dc2626;
-        }
-
-        .status-indicator {
-            padding: 6px 12px;
-            background: #f0fdf4;
-            color: #16a34a;
-            border-radius: 16px;
-            font-size: 12px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .status-indicator.remember-mode {
-            background: #ede9fe;
-            color: #7c3aed;
-        }
-
-        .status-indicator .dot {
-            width: 6px;
-            height: 6px;
-            background: currentColor;
-            border-radius: 50%;
-        }
-
-        .clear-confirmation {
-            padding: 12px 16px;
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            border-radius: 12px;
-            font-size: 13px;
-            color: #dc2626;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .tool-calls {
-            margin-top: 8px;
-            padding: 8px 12px;
-            background: #e0e7ff;
-            border-radius: 8px;
-            font-size: 12px;
-            color: #4338ca;
-        }
-
-        .welcome-message {
-            text-align: center;
-            color: #6b7280;
-            padding: 40px 20px;
-        }
-
-        .welcome-message h2 {
-            font-size: 24px;
-            margin-bottom: 8px;
-            color: #1f2937;
-        }
-
-        .welcome-message p {
-            font-size: 14px;
-        }
-
-        /* Scrollbar styling */
-        .chat-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .chat-messages::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb:hover {
-            background: #a1a1a1;
-        }
-    </style>
 </head>
 <body>
     <div class="chat-container">
@@ -599,25 +202,33 @@
 
         // Clear history button
         clearBtn.addEventListener('click', async () => {
-            // Send clear_history request
-            await fetch('/v1/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: '',
-                    remember: false,
-                    clear_history: true
-                })
-            });
+            // Disable button and sendButton while clearing
+            clearBtn.disabled = true;
+            sendButton.disabled = true;
 
-            // Clear UI messages
-            messagesContainer.innerHTML = '';
+            try {
+                // Send clear_history request
+                const response = await fetch('/v1/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: '',
+                        remember: false,
+                        clear_history: true
+                    })
+                });
 
-            // Re-add welcome message and typing indicator
-            Promise.all([
-                fetch('/v1/prompts/welcome').then(r => r.json()),
-                fetch('/ping').then(r => r.json())
-            ]).then(([welcomeData, healthData]) => {
+                if (!response.ok) throw new Error('Failed to clear history');
+
+                // Clear UI messages
+                messagesContainer.innerHTML = '';
+
+                // Re-add welcome message and typing indicator
+                const [welcomeData, healthData] = await Promise.all([
+                    fetch('/v1/prompts/welcome').then(r => r.json()),
+                    fetch('/ping').then(r => r.json())
+                ]);
+
                 messagesContainer.innerHTML = `
                     <div class="clear-confirmation">
                         Conversation history cleared!
@@ -641,10 +252,22 @@
                 typingIndicator = newTypingIndicator;
 
                 conversationStarted = false;
-            }).catch((error) => {
-                console.error('Error reloading welcome:', error);
-                conversationStarted = false;
-            });
+            } catch (error) {
+                console.error('Error clearing history:', error);
+                // Show error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'clear-confirmation';
+                errorDiv.style.background = '#fef2f2';
+                errorDiv.style.borderColor = '#fecaca';
+                errorDiv.style.color = '#dc2626';
+                errorDiv.textContent = 'Failed to clear history. Please try again.';
+                messagesContainer.insertBefore(errorDiv, typingIndicator);
+            } finally {
+                // Re-enable buttons
+                clearBtn.disabled = false;
+                sendButton.disabled = false;
+                messageInput.focus();
+            }
         });
 
         // Load welcome messages and check health on load
