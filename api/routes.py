@@ -1,5 +1,6 @@
 import logging
 from typing import Dict
+from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, FileResponse
 
@@ -64,6 +65,15 @@ async def serve_chat_ui():
             return HTMLResponse(content=f.read())
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Chat UI not found")
+
+
+@router.get("/static/style.css")
+async def serve_style_css():
+    """Serve the CSS stylesheet."""
+    css_path = Path("static/style.css")
+    if not css_path.exists():
+        raise HTTPException(status_code=404, detail="CSS file not found")
+    return FileResponse(css_path, media_type="text/css")
 
 
 @router.get("/v1/prompts/welcome")
