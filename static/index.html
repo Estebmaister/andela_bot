@@ -28,6 +28,14 @@
                 <h2>Hi there! 👋</h2>
                 <p>I'm your customer support assistant. I can help you with:</p>
                 <p style="margin-top: 12px;">Finding products, checking prices, viewing orders, and more.</p>
+                <div class="quick-actions">
+                    <button class="quick-action-btn" data-message="Hi there, can you show me what can I do with you?">
+                        What can you help me with?
+                    </button>
+                    <button class="quick-action-btn" data-message="Show me some products you have available">
+                        Show me your products
+                    </button>
+                </div>
             </div>
 
             <div class="typing-indicator" id="typing">
@@ -193,6 +201,22 @@
             if (e.key === 'Enter') sendMessage();
         });
 
+        // Quick action buttons
+        function attachQuickActionListeners() {
+            document.querySelectorAll('.quick-action-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const message = btn.getAttribute('data-message');
+                    if (message) {
+                        messageInput.value = message;
+                        sendMessage();
+                    }
+                });
+            });
+        }
+
+        // Attach listeners on page load
+        attachQuickActionListeners();
+
         // Remember mode toggle
         rememberBtn.addEventListener('click', () => {
             rememberMode = !rememberMode;
@@ -237,6 +261,14 @@
                         <h2>${welcomeData.title}</h2>
                         <p>${welcomeData.subtitle}</p>
                         <p style="margin-top: 12px;">${welcomeData.features}</p>
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" data-message="Hi there, can you show me what can I do with you?">
+                                What can you help me with?
+                            </button>
+                            <button class="quick-action-btn" data-message="Show me some products you have available">
+                                Show me your products
+                            </button>
+                        </div>
                     </div>
                     <div class="typing-indicator" id="typing">
                         <div class="typing-dot"></div>
@@ -250,6 +282,9 @@
                 const oldTyping = typingIndicator;
                 oldTyping.id = 'old-typing';
                 typingIndicator = newTypingIndicator;
+
+                // Re-attach event listeners to new quick action buttons
+                attachQuickActionListeners();
 
                 conversationStarted = false;
             } catch (error) {
@@ -282,7 +317,17 @@
                     <h2>${welcomeData.title}</h2>
                     <p>${welcomeData.subtitle}</p>
                     <p style="margin-top: 12px;">${welcomeData.features}</p>
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" data-message="Hi there, can you show me what can I do with you?">
+                            What can you help me with?
+                        </button>
+                        <button class="quick-action-btn" data-message="Show me some products you have available">
+                            Show me your products
+                        </button>
+                    </div>
                 `;
+                // Re-attach event listeners to new buttons
+                attachQuickActionListeners();
             }
 
             // Update status dot
