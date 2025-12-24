@@ -201,21 +201,16 @@
             if (e.key === 'Enter') sendMessage();
         });
 
-        // Quick action buttons
-        function attachQuickActionListeners() {
-            document.querySelectorAll('.quick-action-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const message = btn.getAttribute('data-message');
-                    if (message) {
-                        messageInput.value = message;
-                        sendMessage();
-                    }
-                });
-            });
-        }
-
-        // Attach listeners on page load
-        attachQuickActionListeners();
+        // Quick action buttons - use event delegation
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('quick-action-btn')) {
+                const message = e.target.getAttribute('data-message');
+                if (message) {
+                    messageInput.value = message;
+                    sendMessage();
+                }
+            }
+        });
 
         // Remember mode toggle
         rememberBtn.addEventListener('click', () => {
@@ -283,9 +278,6 @@
                 oldTyping.id = 'old-typing';
                 typingIndicator = newTypingIndicator;
 
-                // Re-attach event listeners to new quick action buttons
-                attachQuickActionListeners();
-
                 conversationStarted = false;
             } catch (error) {
                 console.error('Error clearing history:', error);
@@ -326,8 +318,6 @@
                         </button>
                     </div>
                 `;
-                // Re-attach event listeners to new buttons
-                attachQuickActionListeners();
             }
 
             // Update status dot
