@@ -1,6 +1,6 @@
 import logging
 from typing import Dict
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, FileResponse
 
 from app.models import ChatRequest, ChatResponse, HealthResponse
@@ -38,11 +38,18 @@ async def ping():
 
 
 @router.post("/v1/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, http_request: Request):
     """Chat endpoint for customer support."""
     try:
+        # Extract client IP for conversation tracking
+        client_ip = http_request.client.host
         agent = get_support_agent()
-        response = await agent.chat(request.message)
+        response = await agent.chat(
+            user_message=request.message,
+            user_identifier=client_ip,
+            remember=request.remember,
+            clear_history=request.clear_history,
+        )
         return response
     except Exception as e:
         logger.error(f"Chat error: {e}")

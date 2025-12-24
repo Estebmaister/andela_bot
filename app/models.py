@@ -5,6 +5,8 @@ from typing import Optional, List, Dict, Any
 class ChatRequest(BaseModel):
     """Request model for chat endpoint."""
     message: str = Field(..., description="User message")
+    remember: bool = Field(default=False, description="If True, use full conversation history instead of last 10 messages")
+    clear_history: bool = Field(default=False, description="If True, clear conversation history for this user")
 
 
 class ToolCall(BaseModel):

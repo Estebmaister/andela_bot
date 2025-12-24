@@ -1,17 +1,28 @@
 import json
 import logging
+import re
 from typing import Any, Optional
 
 from app.models import ChatResponse, ToolCall
 from app.llm_service import get_llm_service
 from app.mcp_client import get_mcp_client
 from app.prompt_loader import get_support_agent_prompt
+from app.conversation_store import get_conversation_store
 
 logger = logging.getLogger(__name__)
+
+# Pattern to detect "remember" phrase in user messages
+REMEMBER_PHRASE_PATTERN = re.compile(
+    r'\bremember\b',
+    re.IGNORECASE
+)
 
 
 class SupportAgent:
     """Customer support agent with MCP tool calling capabilities."""
+
+    # Default number of messages to include in context
+    DEFAULT_HISTORY_LIMIT = 10
 
     def __init__(self):
         self.llm_service = get_llm_service()
@@ -32,12 +43,63 @@ class SupportAgent:
             logger.info(f"Loaded {len(self._available_tools)} tools from MCP server")
         return self._available_tools
 
-    async def chat(self, user_message: str) -> ChatResponse:
-        """Process a user message and return a response."""
-        # Build messages with system prompt
+    def _should_use_full_history(self, message: str, remember_flag: bool) -> bool:
+        """Determine if full conversation history should be used.
+
+        Args:
+            message: The user's message
+            remember_flag: The remember flag from the request
+
+        Returns:
+            True if full history should be used
+        """
+        if remember_flag:
+            return True
+        # Check if message contains "remember" keyword
+        return bool(REMEMBER_PHRASE_PATTERN.search(message))
+
+    async def chat(
+        self,
+        user_message: str,
+        user_identifier: str,
+        remember: bool = False,
+        clear_history: bool = False,
+    ) -> ChatResponse:
+        """Process a user message and return a response.
+
+        Args:
+            user_message: The user's message
+            user_identifier: Unique identifier for the user (e.g., IP address)
+            remember: If True, use full conversation history
+            clear_history: If True, clear conversation history before processing
+        """
+        store = get_conversation_store()
+        conversation = store.get_or_create_conversation(user_identifier)
+
+        # Clear history if requested
+        if clear_history:
+            store.delete_conversation(user_identifier)
+            conversation = store.get_or_create_conversation(user_identifier)
+            logger.info(f"Cleared conversation history for {user_identifier}")
+
+        # Add user message to conversation history
+        conversation.add_message("user", user_message)
+
+        # Determine history limit
+        use_full_history = self._should_use_full_history(user_message, remember)
+        history_limit = None if use_full_history else self.DEFAULT_HISTORY_LIMIT
+
+        # Get conversation history
+        history = conversation.get_history(limit=history_limit, include_all=use_full_history)
+        logger.info(
+            f"User {user_identifier}: using {len(history)} messages "
+            f"({'all' if use_full_history else f'last {history_limit}'})"
+        )
+
+        # Build messages with system prompt and history
         messages = [
             {"role": "system", "content": self.get_system_prompt()},
-            {"role": "user", "content": user_message},
+            *history,  # Include conversation history
         ]
 
         # Get available tools
@@ -101,12 +163,18 @@ class SupportAgent:
             final_response = await self.llm_service.chat(messages, tools=tools)
             final_message = final_response.choices[0].message
 
+            # Save assistant response to conversation
+            conversation.add_message("assistant", final_message.content or "")
+
             return ChatResponse(
                 response=final_message.content or "I apologize, but I couldn't generate a response.",
                 tool_calls=tool_calls_data if tool_calls_data else None,
             )
 
         # No tool calls, return direct response
+        # Save assistant response to conversation
+        conversation.add_message("assistant", assistant_message.content or "")
+
         return ChatResponse(
             response=assistant_message.content or "I apologize, but I couldn't generate a response.",
         )

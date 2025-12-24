@@ -256,8 +256,12 @@
         .chat-input {
             padding: 20px;
             border-top: 1px solid #e5e7eb;
+        }
+
+        .input-row {
             display: flex;
             gap: 10px;
+            margin-bottom: 10px;
         }
 
         .chat-input input {
@@ -293,6 +297,75 @@
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #e5e7eb;
+        }
+
+        .control-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .control-btn.danger:hover {
+            background: #fecaca;
+            border-color: #fca5a5;
+            color: #dc2626;
+        }
+
+        .status-indicator {
+            padding: 6px 12px;
+            background: #f0fdf4;
+            color: #16a34a;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-indicator.remember-mode {
+            background: #ede9fe;
+            color: #7c3aed;
+        }
+
+        .status-indicator .dot {
+            width: 6px;
+            height: 6px;
+            background: currentColor;
+            border-radius: 50%;
+        }
+
+        .clear-confirmation {
+            padding: 12px 16px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 12px;
+            font-size: 13px;
+            color: #dc2626;
+            text-align: center;
+            margin-bottom: 10px;
         }
 
         .tool-calls {
@@ -362,13 +435,24 @@
         </div>
 
         <div class="chat-input">
-            <input
-                type="text"
-                id="messageInput"
-                placeholder="Type your message..."
-                autocomplete="off"
-            >
-            <button id="sendButton">Send</button>
+            <div class="input-row">
+                <input
+                    type="text"
+                    id="messageInput"
+                    placeholder="Type your message..."
+                    autocomplete="off"
+                >
+                <button id="sendButton">Send</button>
+            </div>
+            <div class="controls-row">
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="dot"></span>
+                    <span id="statusText">Normal Mode (10 messages)</span>
+                </div>
+                <div style="flex:1"></div>
+                <button class="control-btn" id="rememberBtn">Remember Mode</button>
+                <button class="control-btn danger" id="clearBtn">Clear History</button>
+            </div>
         </div>
     </div>
 
@@ -395,8 +479,24 @@
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
         const typingIndicator = document.getElementById('typing');
+        const rememberBtn = document.getElementById('rememberBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
 
         let conversationStarted = false;
+        let rememberMode = false;
+
+        // Update status indicator based on remember mode
+        function updateStatusIndicator() {
+            if (rememberMode) {
+                statusIndicator.classList.add('remember-mode');
+                statusText.textContent = 'Remember Mode (full history)';
+            } else {
+                statusIndicator.classList.remove('remember-mode');
+                statusText.textContent = 'Normal Mode (10 messages)';
+            }
+        }
 
         function addMessage(content, isUser) {
             if (!conversationStarted) {
@@ -451,7 +551,11 @@
                 const response = await fetch('/v1/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message })
+                    body: JSON.stringify({
+                        message,
+                        remember: rememberMode,
+                        clear_history: false
+                    })
                 });
 
                 if (!response.ok) throw new Error('Failed to get response');
@@ -484,6 +588,63 @@
         sendButton.addEventListener('click', sendMessage);
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
+        });
+
+        // Remember mode toggle
+        rememberBtn.addEventListener('click', () => {
+            rememberMode = !rememberMode;
+            rememberBtn.classList.toggle('active', rememberMode);
+            updateStatusIndicator();
+        });
+
+        // Clear history button
+        clearBtn.addEventListener('click', async () => {
+            // Send clear_history request
+            await fetch('/v1/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: '',
+                    remember: false,
+                    clear_history: true
+                })
+            });
+
+            // Clear UI messages
+            messagesContainer.innerHTML = '';
+
+            // Re-add welcome message and typing indicator
+            Promise.all([
+                fetch('/v1/prompts/welcome').then(r => r.json()),
+                fetch('/ping').then(r => r.json())
+            ]).then(([welcomeData, healthData]) => {
+                messagesContainer.innerHTML = `
+                    <div class="clear-confirmation">
+                        Conversation history cleared!
+                    </div>
+                    <div class="welcome-message">
+                        <h2>${welcomeData.title}</h2>
+                        <p>${welcomeData.subtitle}</p>
+                        <p style="margin-top: 12px;">${welcomeData.features}</p>
+                    </div>
+                    <div class="typing-indicator" id="typing">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                `;
+
+                // Re-assign typing indicator reference
+                const newTypingIndicator = document.getElementById('typing');
+                const oldTyping = typingIndicator;
+                oldTyping.id = 'old-typing';
+                typingIndicator = newTypingIndicator;
+
+                conversationStarted = false;
+            }).catch((error) => {
+                console.error('Error reloading welcome:', error);
+                conversationStarted = false;
+            });
         });
 
         // Load welcome messages and check health on load
