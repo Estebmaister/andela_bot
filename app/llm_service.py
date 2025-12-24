@@ -27,6 +27,10 @@ class LLMService:
         from openai.types.chat import ChatCompletion
 
         params: dict[str, Any] = {
+            "extra_headers": {
+                "HTTP-Referer": "https://github.com/estebmaister/andela_bot",
+                "X-Title": "andela_bot"
+            },
             "model": self.model,
             "messages": messages,
             "temperature": settings.TEMPERATURE,
@@ -44,6 +48,10 @@ class LLMService:
         """Check if LLM service is accessible."""
         try:
             await self.client.chat.completions.create(
+                extra_headers={
+                    "HTTP-Referer": "https://github.com/estebmaister/andela_bot",
+                    "X-Title": "andela_bot"
+                },
                 model=self.model,
                 messages=[{"role": "user", "content": "test"}],
                 max_tokens=5,
