@@ -9,9 +9,9 @@ class Settings(BaseSettings):
     )
 
     # OpenRouter / LLM Configuration
-    OPENROUTER_API_KEY: str = "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"
+    OPENROUTER_API_KEY: str
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    MODEL_NAME: str = "gpt-4o-mini"
+    MODEL_NAME: str = "openai/gpt-4o-mini"
 
     # MCP Server Configuration
     MCP_SERVER_URL: str
