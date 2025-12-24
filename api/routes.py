@@ -1,4 +1,5 @@
 import logging
+from typing import Dict
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
 
@@ -6,6 +7,11 @@ from app.models import ChatRequest, ChatResponse, HealthResponse
 from app.agent import get_support_agent
 from app.mcp_client import get_mcp_client
 from app.llm_service import get_llm_service
+from app.prompt_loader import (
+    get_welcome_title,
+    get_welcome_subtitle,
+    get_welcome_features,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,3 +57,13 @@ async def serve_chat_ui():
             return HTMLResponse(content=f.read())
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Chat UI not found")
+
+
+@router.get("/v1/prompts/welcome")
+async def get_welcome_prompts() -> Dict[str, str]:
+    """Get welcome message prompts for the UI."""
+    return {
+        "title": get_welcome_title(),
+        "subtitle": get_welcome_subtitle(),
+        "features": get_welcome_features(),
+    }

@@ -5,35 +5,9 @@ from typing import Any, Optional
 from app.models import ChatResponse, ToolCall
 from app.llm_service import get_llm_service
 from app.mcp_client import get_mcp_client
+from app.prompt_loader import get_support_agent_prompt
 
 logger = logging.getLogger(__name__)
-
-# System prompt for customer support agent
-SYSTEM_PROMPT = """You are a helpful customer support agent for a computer products company that sells monitors, printers, computers, and accessories.
-
-Your capabilities include:
-- **Product Search**: Find products by name, category, or description
-- **Product Details**: Get detailed information including price, specs, and stock
-- **Customer Lookup**: Find customer information and verify identity
-- **Order Management**: View order history, check order status, and create new orders
-- **Inventory**: Browse available products and check stock levels
-
-Guidelines:
-- Be friendly, professional, and concise
-- Always verify customer identity before accessing account-specific information
-- When creating orders, confirm all details with the customer first
-- Use tools to get accurate, real-time information
-- If you need more information, ask specific questions
-
-Available tools:
-- list_products: Browse products by category
-- get_product: Get detailed info by SKU
-- search_products: Search by name/description
-- get_customer: Look up customer by ID
-- verify_customer_pin: Verify customer with email + PIN
-- list_orders: View customer orders
-- get_order: Get order details
-- create_order: Create a new order (requires customer_id and items)"""
 
 
 class SupportAgent:
@@ -43,6 +17,13 @@ class SupportAgent:
         self.llm_service = get_llm_service()
         self.mcp_client = get_mcp_client()
         self._available_tools: Optional[list[dict]] = None
+        self._system_prompt: Optional[str] = None
+
+    def get_system_prompt(self) -> str:
+        """Get the system prompt, loading from file if not cached."""
+        if self._system_prompt is None:
+            self._system_prompt = get_support_agent_prompt()
+        return self._system_prompt
 
     async def get_available_tools(self) -> list[dict]:
         """Get available tools from MCP server, formatted for OpenAI."""
@@ -55,7 +36,7 @@ class SupportAgent:
         """Process a user message and return a response."""
         # Build messages with system prompt
         messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": self.get_system_prompt()},
             {"role": "user", "content": user_message},
         ]
 

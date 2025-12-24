@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     MODEL_NAME: str = "openai/gpt-4o-mini"
 
     # MCP Server Configuration
-    MCP_SERVER_URL: str
+    MCP_SERVER_URL: str = "https://vipfapwm3x.us-east-1.awsapprunner.com/mcp"
 
     # Server Configuration
     HOST: str = "0.0.0.0"

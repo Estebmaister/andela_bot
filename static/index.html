@@ -486,20 +486,32 @@
             if (e.key === 'Enter') sendMessage();
         });
 
-        // Check health on load
-        fetch('/ping')
-            .then(r => r.json())
-            .then(data => {
-                const statusDot = document.querySelector('.status-dot');
-                if (data.mcp_connected && data.llm_configured) {
-                    statusDot.style.background = '#4ade80';
-                } else {
-                    statusDot.style.background = '#f87171';
-                }
-            })
-            .catch(() => {
-                document.querySelector('.status-dot').style.background = '#f87171';
-            });
+        // Load welcome messages and check health on load
+        Promise.all([
+            fetch('/v1/prompts/welcome').then(r => r.json()),
+            fetch('/ping').then(r => r.json())
+        ]).then(([welcomeData, healthData]) => {
+            // Update welcome message
+            const welcomeDiv = messagesContainer.querySelector('.welcome-message');
+            if (welcomeDiv && welcomeData.title) {
+                welcomeDiv.innerHTML = `
+                    <h2>${welcomeData.title}</h2>
+                    <p>${welcomeData.subtitle}</p>
+                    <p style="margin-top: 12px;">${welcomeData.features}</p>
+                `;
+            }
+
+            // Update status dot
+            const statusDot = document.querySelector('.status-dot');
+            if (healthData.mcp_connected && healthData.llm_configured) {
+                statusDot.style.background = '#4ade80';
+            } else {
+                statusDot.style.background = '#f87171';
+            }
+        }).catch((error) => {
+            console.error('Error loading initial data:', error);
+            document.querySelector('.status-dot').style.background = '#f87171';
+        });
     </script>
 </body>
 </html>
